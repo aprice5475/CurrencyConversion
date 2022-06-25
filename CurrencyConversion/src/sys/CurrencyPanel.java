@@ -33,25 +33,24 @@ import javax.swing.text.NumberFormatter;
  * @author apricejr
  *
  */
-public class MyPanel extends JPanel {
+public class CurrencyPanel extends JPanel {
+	private static final long serialVersionUID = -139412121346194196L;
 	//Currencies used in program mapped to their real world values.
 	private static final Map<String, Double> COUNTRY_CURRENCIES = new HashMap<>();
 	//warning message for static initialization/connecting to Internet
-	private static final String STATIC_WARNING_MSG = "Failed to Retrieve Information from the Internet.\nPlease Try Again Later.";
-	//warning message for invalid values
-	private static final String WARNING_MSG = "Cannot enter negative numbers!";
-	//conversion data web page
-	private static final String WEB_PAGE_URL = "https://www.x-rates.com/table/?from=USD&amount=1";
+	private static final String STATIC_WARNING_MSG = "Failed to Retrieve Information from the Internet.\nPlease Try Again Later.",
+			//warning message for invalid values
+			WARNING_MSG = "Cannot enter negative numbers!",
+			//conversion data web page
+			WEB_PAGE_URL = "https://www.x-rates.com/table/?from=USD&amount=1";
 	//starting amount
 	private static final double START_MONEY = 100.00;
 	//Labels to identify fields
 	private JLabel amountLabel, startCurrencyLabel, endCurrencyLabel, convertedAmountLabel, blankLabel;
 	//Strings for labels
-	private String amountString = "Starting Amount: ";
-	private String selectStartCurrencyString = "Select Starting Currency: ";
-	private String selectConvertedCurrencyString = "Select Converted Currency: ";
-	private String convertedAmountString = "Converted Amount: ";
-	private String switchString = "Switch Currencies";
+	private String amountString = "Starting Amount: ", selectStartCurrencyString = "Select Starting Currency: ",
+			selectConvertedCurrencyString = "Select Converted Currency: ", convertedAmountString = "Converted Amount: ",
+			switchString = "Switch Currencies";
 	//Fields for data entry
 	private JFormattedTextField amountField, convertedAmountField;
 	//Menus for currency entry
@@ -60,29 +59,13 @@ public class MyPanel extends JPanel {
 	private JButton switchButton;
 	//Formats to format and parse numbers
 	private NumberFormat amountDisplayFormat, amountEditFormat, paymentFormat;
+	//For currencies upon reloading panel
 
-	/*
-	 * set up currency options and create and set up number formats and menus
-	 */
-	{
-		Vector<String> v = sortedCurrencies();
-		amountDisplayFormat = NumberFormat.getCurrencyInstance();
-		amountDisplayFormat.setMinimumFractionDigits(0);
-		amountEditFormat = NumberFormat.getNumberInstance();
-		paymentFormat = NumberFormat.getCurrencyInstance();
-		currentCurrencyMenu = new JComboBox<>(v);
-		currentCurrencyMenu.setSelectedItem("US Dollar");
-		currentCurrencyMenu.addActionListener((e) -> updateConvertedAmountField());
-		desiredCurrencyMenu = new JComboBox<>(v);
-		desiredCurrencyMenu.setSelectedItem("Euro");
-		desiredCurrencyMenu.addActionListener((e) -> updateConvertedAmountField());
-		switchButton = new JButton(switchString);
-		switchButton.addActionListener((e) -> switchCurrencies());
-	}
 	/**
-	 * Gets current values of currencies from web page.
+	 * Initializes all currencies.
 	 */
-	static {
+	public static void initializeCurrencyData() {
+
 		//adding currencies
 		COUNTRY_CURRENCIES.put("British Pound", null);
 		COUNTRY_CURRENCIES.put("Euro", null);
@@ -126,6 +109,7 @@ public class MyPanel extends JPanel {
 			for (String currency : badCurrencies) {
 				COUNTRY_CURRENCIES.remove(currency);
 			}
+			System.out.println(COUNTRY_CURRENCIES);
 		} catch (MalformedURLException e) {
 			shutdown("Unable to connect to \"" + WEB_PAGE_URL
 					+ "\" because of an unknown protocol or error while parsing the string.\nPlease check the URL before trying again.");
@@ -138,10 +122,12 @@ public class MyPanel extends JPanel {
 	}
 
 	/**
-	 * Creates a MyPanel.
+	 * Creates a CurrencyPanel
 	 */
-	public MyPanel() {
+	public CurrencyPanel() {
 		super(new BorderLayout());
+		initializeCurrencyData();
+		setup();
 		//create labels
 		amountLabel = new JLabel(amountString);
 		startCurrencyLabel = new JLabel(selectStartCurrencyString);
@@ -189,6 +175,27 @@ public class MyPanel extends JPanel {
 		updateConvertedAmountField();
 	}
 
+	/*
+	 * set up currency options and create and set up number formats and menus
+	 */
+	private void setup() {
+		Vector<String> v = sortedCurrencies();
+		amountDisplayFormat = NumberFormat.getCurrencyInstance();
+		amountDisplayFormat.setMinimumFractionDigits(0);
+		amountEditFormat = NumberFormat.getNumberInstance();
+		paymentFormat = NumberFormat.getCurrencyInstance();
+		currentCurrencyMenu = new JComboBox<>(v);
+		currentCurrencyMenu.setSelectedItem("US Dollar");
+		currentCurrencyMenu.addActionListener((e) -> updateConvertedAmountField());
+
+		desiredCurrencyMenu = new JComboBox<>(v);
+		desiredCurrencyMenu.setSelectedItem("Euro");
+		desiredCurrencyMenu.addActionListener((e) -> updateConvertedAmountField());
+
+		switchButton = new JButton(switchString);
+		switchButton.addActionListener((e) -> switchCurrencies());
+	}
+
 	/**
 	 * Returns a vector of currencies sorted in alphabetical order.
 	 *
@@ -215,7 +222,6 @@ public class MyPanel extends JPanel {
 	private static void shutdown(String warning) {
 		JOptionPane.showMessageDialog(null, warning);
 		System.exit(ABORT);
-		return;
 	}
 
 	private void switchCurrencies() {
@@ -225,6 +231,7 @@ public class MyPanel extends JPanel {
 	}
 
 	private void updateConvertedAmountField() {
+		System.out.println("Change currency");
 		Double value = Double.valueOf(amountField.getValue() + "");
 		//no unknown or negative values
 		if ((value == null) || (value < 0)) {
@@ -233,8 +240,7 @@ public class MyPanel extends JPanel {
 		} else {
 			String startCurrency = (String) currentCurrencyMenu.getSelectedItem(),
 					endCurrency = (String) desiredCurrencyMenu.getSelectedItem();
-			double convertedAmount = convert(value, startCurrency, endCurrency);
-			convertedAmountField.setValue(convertedAmount);
+			convertedAmountField.setValue(convert(value, startCurrency, endCurrency));
 		}
 	}
 
@@ -248,6 +254,16 @@ public class MyPanel extends JPanel {
 	 */
 	private double convert(double value, String currentCurrency, String desiredCurrency) {
 		return value * (COUNTRY_CURRENCIES.get(desiredCurrency) / COUNTRY_CURRENCIES.get(currentCurrency));
+	}
+
+	/**
+	 *
+	 * @return conversion data for export
+	 */
+	String getCurrencyData() {
+		updateConvertedAmountField();//make sure data is entered
+		return amountField.getValue() + " " + currentCurrencyMenu.getSelectedItem() + " = "
+				+ convertedAmountField.getValue() + " " + desiredCurrencyMenu.getSelectedItem();
 	}
 
 }
